@@ -6,13 +6,16 @@ screen = pygame.display.set_mode([1280, 720])
 
 WHITE = (255, 255, 255)
 
-bg = pygame.image.load(os.path.join("flap\images", "flapbg.png"))
+bg = pygame.image.load("flap\images\\flapbg.png")
 bg = pygame.transform.scale(bg, (1280, 720))
 
-btn_img = pygame.image.load(os.path.join('flap\images', 'button.png'))
+btn_img = pygame.image.load("flap\images\\button.png")
 btn_img = pygame.transform.scale(btn_img, (212, 101))
 
 jumping = False
+scroll_speed = 4
+ground_scroll = 0
+pipe_scroll = 800
 
 def get_font(size):
     return pygame.font.SysFont('Futura', size)
@@ -54,7 +57,7 @@ class Bird(pygame.sprite.Sprite):
         self.index = 0
         self.counter = 0
         for num in range(1, 3):
-            img = pygame.image.load(os.path.join('flap', f'images/bird{num}.png'))
+            img = pygame.image.load(f'flap\images\\bird{num}.png')
             self.images.append(img)
         self.image = self.images[self.index]
         self.rect = self.image.get_rect()
@@ -96,7 +99,7 @@ class Bird(pygame.sprite.Sprite):
                 quit()
         
     def collisions(self):
-        collided = pygame.sprite.spritecollide(bird, ground_group, False)
+        collided = pygame.sprite.spritecollide(bird, collidables, False)
         if collided:
             collided = None
             game_over()
@@ -114,28 +117,48 @@ class Bird(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.images[self.index], self.vel * -2)
               
 class Ground(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self):
         super().__init__()
-        self.image = pygame.image.load(os.path.join('flap\images', 'ground.png')).convert_alpha()
-        self.image = pygame.transform.scale(self.image, (1280, 70))
+        self.image = pygame.image.load('flap\images\ground.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (1800, 70))
         self.rect = self.image.get_rect()
-        self.rect.topleft = [x, y]
         
+        self.x = ground_scroll
+        self.y = 650
+        
+        
+    def scrolling(self):
+        global ground_scroll
+        ground_scroll -= scroll_speed
+        self.x = ground_scroll
+        self.rect.x = self.x
+        self.rect.y = self.y
+        if abs(ground_scroll) > 300:
+            ground_scroll = 0
+
 class Pipe(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.image.load(os.path.join('flap\images', 'pipe.png')).convert_alpha()
-        # self.image = pygame.transform.scale(self.image, (1280, 70))
+        self.image = pygame.image.load('flap\images\pipe.png').convert_alpha()
         self.rect = self.image.get_rect()
-        self.x = 800
-        self.y = 300 
+        self.x = pipe_scroll
+        self.y = 320
+        
+    def scrolling(self):
+        global pipe_scroll
+        pipe_scroll -= scroll_speed
+        self.x = pipe_scroll
+        self.rect.x = self.x
+        self.rect.y = self.y
+        if abs(pipe_scroll) < 0:
+            self.kill()
     
-bird_group = pygame.sprite.Group()
+bird_group = pygame.sprite.Group()  
 bird = Bird(6, 300, 300)
 bird_group.add(bird)
 
 ground_group = pygame.sprite.Group()
-ground = Ground(0, 650)
+ground = Ground()
 ground_group.add(ground)
 
 collidables = pygame.sprite.Group()
@@ -147,7 +170,11 @@ def game_loop():
     
     global score
     score = 0
-    bird.rect.y = 300
+    bird.rect.y = 300 
+    global pipe_scroll
+    pipe_scroll = 800
+    global ground_scroll
+    ground_scroll = 0
     
     title_font = pygame.font.SysFont('Futura', 110)
     score_text = title_font.render(f'Score: {score}', False, WHITE)
@@ -160,10 +187,12 @@ def game_loop():
         
         bird_group.draw(screen)
         bird_group.update()
-        ground_group.draw(screen)
+        collidables.draw(screen)
         
         bird.collisions()
         bird.animation()
+        ground.scrolling()
+        pipe.scrolling()
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
