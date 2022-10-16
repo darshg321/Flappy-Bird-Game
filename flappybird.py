@@ -6,10 +6,10 @@ screen = pygame.display.set_mode([1280, 720])
 
 WHITE = (255, 255, 255)
 
-bg = pygame.image.load("flap\images\\flapbg.png")
+bg = pygame.image.load("assets\images\\flapbg.png")
 bg = pygame.transform.scale(bg, (1280, 720))
 
-btn_img = pygame.image.load("flap\images\\button.png")
+btn_img = pygame.image.load("assets\images\\button.png")
 btn_img = pygame.transform.scale(btn_img, (212, 101))
 
 jumping = False
@@ -57,7 +57,7 @@ class Bird(pygame.sprite.Sprite):
         self.index = 0
         self.counter = 0
         for num in range(1, 3):
-            img = pygame.image.load(f'flap\images\\bird{num}.png')
+            img = pygame.image.load(f'assets\images\\bird{num}.png')
             self.images.append(img)
         self.image = self.images[self.index]
         self.rect = self.image.get_rect()
@@ -119,7 +119,7 @@ class Bird(pygame.sprite.Sprite):
 class Ground(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.image.load('flap\images\ground.png').convert_alpha()
+        self.image = pygame.image.load('assets\images\ground.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (1800, 70))
         self.rect = self.image.get_rect()
         
@@ -139,7 +139,7 @@ class Ground(pygame.sprite.Sprite):
 class Pipe(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.image.load('flap\images\pipe.png').convert_alpha()
+        self.image = pygame.image.load('assets\images\pipe.png').convert_alpha()
         self.rect = self.image.get_rect()
         self.x = pipe_scroll
         self.y = 320
