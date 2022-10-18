@@ -1,4 +1,9 @@
-import pygame, random, os
+# make bird smaller/ pipe gap larger
+#fix score
+# make pipe not overlap with ground
+# add sound
+
+import pygame, random
 pygame.init()
 
 fps = pygame.time.Clock()
@@ -15,7 +20,9 @@ btn_img = pygame.transform.scale(btn_img, (212, 101))
 jumping = False
 scroll_speed = 4
 ground_scroll = 0
-pipe_scroll = 800
+pipe_gap = 250
+pipe_frequency = 1500
+last_pipe = pygame.time.get_ticks() - pipe_frequency
 
 def get_font(size):
     return pygame.font.SysFont('Futura', size)
@@ -122,10 +129,8 @@ class Ground(pygame.sprite.Sprite):
         self.image = pygame.image.load('assets\images\ground.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (1800, 70))
         self.rect = self.image.get_rect()
-        
         self.x = ground_scroll
         self.y = 650
-        
         
     def scrolling(self):
         global ground_scroll
@@ -137,43 +142,51 @@ class Ground(pygame.sprite.Sprite):
             ground_scroll = 0
 
 class Pipe(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, x, y, position):
         super().__init__()
         self.image = pygame.image.load('assets\images\pipe.png').convert_alpha()
+        self.image = pygame.transform.scale(self.image, (78, 470))
         self.rect = self.image.get_rect()
-        self.x = pipe_scroll
-        self.y = 320
         
-    def scrolling(self):
-        global pipe_scroll
-        pipe_scroll -= scroll_speed
-        self.x = pipe_scroll
-        self.rect.x = self.x
-        self.rect.y = self.y
-        if abs(pipe_scroll) < 0:
-            self.kill()
+        if position == 1:
+            self.image = pygame.transform.flip(self.image, False, True)
+            self.rect.bottomleft = [x, y - int(pipe_gap / 2)]
+        if position == -1:
+            self.rect.topleft = [x, y + int(pipe_gap / 2)]
     
-bird_group = pygame.sprite.Group()  
-bird = Bird(6, 300, 300)
-bird_group.add(bird)
-
-ground_group = pygame.sprite.Group()
-ground = Ground()
-ground_group.add(ground)
-
-collidables = pygame.sprite.Group()
-pipe = Pipe()
-collidables.add(ground, pipe)
+    def update(self):
+        self.rect.x -= scroll_speed
+        if self.rect.right < 0:
+            # pipe_passed = False
+            self.kill()
             
+        # if self.rect.right < 300 and pipe_passed == False:
+        #     pipe_passed = True
+        #     global score
+        #     score += 1
+            
+            
+    
+
+
 def game_loop():
     pygame.display.set_caption('Flap!')
     
-    global score
+    ground_group = pygame.sprite.Group()
+    ground = Ground()
+    ground_group.add(ground)
+
+    global collidables
+    collidables = pygame.sprite.Group()
+    collidables.add(ground)
+    
+    global bird, bird_group
+    bird_group = pygame.sprite.Group()  
+    bird = Bird(6, 300, 300)
+    bird_group.add(bird)
+    
+    global score, ground_scroll
     score = 0
-    bird.rect.y = 300 
-    global pipe_scroll
-    pipe_scroll = 800
-    global ground_scroll
     ground_scroll = 0
     
     title_font = pygame.font.SysFont('Futura', 110)
@@ -183,22 +196,33 @@ def game_loop():
     while True:
         screen.fill((0, 0, 0))
         screen.blit(bg, (0,0))
-        screen.blit(score_text, title_rect)
         
         bird_group.draw(screen)
         bird_group.update()
-        collidables.draw(screen)
-        
         bird.collisions()
         bird.animation()
         ground.scrolling()
-        pipe.scrolling()
+
+        global last_pipe
+
+        time_now = pygame.time.get_ticks()
+        if time_now - last_pipe > pipe_frequency:
+            pipe_height = random.randint(-100, 100)
+            btm_pipe = Pipe(1280, int(720 / 2) + pipe_height, -1)
+            top_pipe = Pipe(1280, int(720 / 2) + pipe_height, 1)
+            collidables.add(btm_pipe)
+            collidables.add(top_pipe)
+            last_pipe = time_now
+            
+        collidables.draw(screen)
+        collidables.update()
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
         
+        screen.blit(score_text, title_rect)
         pygame.display.update()
         fps.tick(60)
         
@@ -212,6 +236,9 @@ def game_over():
     
     title_rect = game_over_title.get_rect(center= (640, 100))
     score_rect = score_text.get_rect(center= (640, 180))
+    
+    collidables.empty()
+    bird_group.empty()
     
     while True:
         screen.fill((0, 0, 0))
