@@ -1,4 +1,4 @@
-import pygame, random
+import pygame, random, sys
 pygame.init()
 
 fps = pygame.time.Clock()
@@ -107,8 +107,7 @@ class Bird(pygame.sprite.Sprite):
                     self.clicked = False
             
             if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+                sys.exit(0)
         
     def collisions(self):
         collided = pygame.sprite.spritecollide(bird, collidables, False)
@@ -229,8 +228,7 @@ def game_loop():
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+                sys.exit(0)
                 
         screen.blit(score_text, title_rect)
         pygame.display.update()
@@ -275,15 +273,13 @@ def game_over():
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+                sys.exit(0)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if retry_btn.checkForInput(MENU_MOUSE_POS):
                     pygame.mixer.Sound.play(retry_sound)
                     game_loop()
                 if quit_btn.checkForInput(MENU_MOUSE_POS):
-                    pygame.quit()
-                    quit()
+                    sys.exit(0)
 
         pygame.display.update()
         fps.tick(60)
@@ -312,15 +308,13 @@ def main_menu():
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+                sys.exit(0)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_btn.checkForInput(MENU_MOUSE_POS):
                     pygame.mixer.Sound.play(retry_sound)
                     game_loop()
                 if quit_btn.checkForInput(MENU_MOUSE_POS):
-                    pygame.quit()
-                    quit()
+                    sys.exit(0)
 
         pygame.display.update()
         fps.tick(60)
