@@ -1,8 +1,3 @@
-# make bird smaller/ pipe gap larger
-#fix score
-# make pipe not overlap with ground
-# add sound
-
 import pygame, random
 pygame.init()
 
@@ -17,12 +12,21 @@ bg = pygame.transform.scale(bg, (1280, 720))
 btn_img = pygame.image.load("assets\images\\button.png")
 btn_img = pygame.transform.scale(btn_img, (212, 101))
 
+game_over_sound = pygame.mixer.Sound("assets\\audio\\audio_die.wav")
+collided_sound = pygame.mixer.Sound("assets\\audio\\audio_hit.wav")
+point_sound = pygame.mixer.Sound("assets\\audio\\audio_point.wav")
+retry_sound = pygame.mixer.Sound("assets\\audio\\audio_swoosh.wav")
+jump_sound = pygame.mixer.Sound("assets\\audio\\audio_wing.wav")
+
+pygame.mixer.init()
+
 jumping = False
 scroll_speed = 4
 ground_scroll = 0
-pipe_gap = 250
+pipe_gap = 175
 pipe_frequency = 1500
 last_pipe = pygame.time.get_ticks() - pipe_frequency
+pipe_passed = False
 
 def get_font(size):
     return pygame.font.SysFont('Futura', size)
@@ -83,6 +87,7 @@ class Bird(pygame.sprite.Sprite):
 
         if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
                 self.clicked = True
+                pygame.mixer.Sound.play(jump_sound)
                 self.vel = -10
         if pygame.mouse.get_pressed()[0] == 0:
             self.clicked = False
@@ -109,6 +114,8 @@ class Bird(pygame.sprite.Sprite):
         collided = pygame.sprite.spritecollide(bird, collidables, False)
         if collided:
             collided = None
+            pygame.mixer.Sound.play(collided_sound)
+            pygame.mixer.Sound.play(game_over_sound)
             game_over()
     
     def animation(self):
@@ -155,19 +162,19 @@ class Pipe(pygame.sprite.Sprite):
             self.rect.topleft = [x, y + int(pipe_gap / 2)]
     
     def update(self):
+        global pipe_passed
         self.rect.x -= scroll_speed
         if self.rect.right < 0:
-            # pipe_passed = False
+            pipe_passed = False
             self.kill()
             
-        # if self.rect.right < 300 and pipe_passed == False:
-        #     pipe_passed = True
-        #     global score
-        #     score += 1
-            
-            
-    
-
+        if self.rect.right < 300 and pipe_passed == False:
+            pipe_passed = True
+            pygame.mixer.Sound.play(point_sound)
+            global score
+            score += 0.5
+            if score == 0.5:
+                score += 0.5
 
 def game_loop():
     pygame.display.set_caption('Flap!')
@@ -185,17 +192,19 @@ def game_loop():
     bird = Bird(6, 300, 300)
     bird_group.add(bird)
     
-    global score, ground_scroll
+    global score, ground_scroll, pipe_passed
     score = 0
     ground_scroll = 0
+    pipe_passed = False
     
-    title_font = pygame.font.SysFont('Futura', 110)
-    score_text = title_font.render(f'Score: {score}', False, WHITE)
-    title_rect = score_text.get_rect(center= (640, 100))
+    title_font = pygame.font.Font("assets\\font\\flapfont.ttf", 100)
     
     while True:
         screen.fill((0, 0, 0))
         screen.blit(bg, (0,0))
+        
+        score_text = title_font.render(f'Score: {int(score)}', False, WHITE)
+        title_rect = score_text.get_rect(center= (640, 100))
         
         bird_group.draw(screen)
         bird_group.update()
@@ -213,15 +222,16 @@ def game_loop():
             collidables.add(btm_pipe)
             collidables.add(top_pipe)
             last_pipe = time_now
-            
+        
         collidables.draw(screen)
         collidables.update()
+        ground_group.draw(screen)
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        
+                
         screen.blit(score_text, title_rect)
         pygame.display.update()
         fps.tick(60)
@@ -229,13 +239,15 @@ def game_loop():
 def game_over():
     pygame.display.set_caption('Game Over!')
     
-    title_font = pygame.font.SysFont('Futura', 80)
+    title_font = pygame.font.Font("assets\\font\\flapfont.ttf", 55)
     game_over_title = title_font.render('Game Over!', False, WHITE)
     
-    score_text = title_font.render(f'Score: {score}', True, (255, 0, 17))
+    score_text = title_font.render(f'Score: {int(score)}', True, (255, 0, 17))
     
     title_rect = game_over_title.get_rect(center= (640, 100))
     score_rect = score_text.get_rect(center= (640, 180))
+    
+    sound_played = False
     
     collidables.empty()
     bird_group.empty()
@@ -245,6 +257,10 @@ def game_over():
         screen.blit(bg, (0,0))
         screen.blit(game_over_title, title_rect)
         screen.blit(score_text, score_rect)
+        
+        if sound_played == False:
+            pygame.mixer.Sound.play(retry_sound)
+            sound_played = True
         
         MENU_MOUSE_POS = pygame.mouse.get_pos()
         
@@ -263,6 +279,7 @@ def game_over():
                 quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if retry_btn.checkForInput(MENU_MOUSE_POS):
+                    pygame.mixer.Sound.play(retry_sound)
                     game_loop()
                 if quit_btn.checkForInput(MENU_MOUSE_POS):
                     pygame.quit()
@@ -274,7 +291,7 @@ def game_over():
 def main_menu():
     pygame.display.set_caption('Main Menu')
     
-    title_font = pygame.font.SysFont('Futura', 110)
+    title_font = pygame.font.Font("assets\\font\\flapfont.ttf", 100)
     title = title_font.render('Flappy Bird!', False, WHITE)
     title_rect = title.get_rect(center= (640, 100))
     while True:
@@ -299,6 +316,7 @@ def main_menu():
                 quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_btn.checkForInput(MENU_MOUSE_POS):
+                    pygame.mixer.Sound.play(retry_sound)
                     game_loop()
                 if quit_btn.checkForInput(MENU_MOUSE_POS):
                     pygame.quit()
