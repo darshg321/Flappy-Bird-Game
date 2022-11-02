@@ -27,6 +27,7 @@ pipe_gap = 175
 pipe_frequency = 1500
 last_pipe = pygame.time.get_ticks() - pipe_frequency
 pipe_passed = False
+high_score = 0
 
 def get_font(size):
     return pygame.font.SysFont('Futura', size)
@@ -237,13 +238,19 @@ def game_loop():
 def game_over():
     pygame.display.set_caption('Game Over!')
     
+    global high_score
+    if score > high_score:
+        high_score = score
+    
     title_font = pygame.font.Font("assets\\font\\flapfont.ttf", 55)
     game_over_title = title_font.render('Game Over!', False, WHITE)
     
     score_text = title_font.render(f'Score: {int(score)}', True, (255, 0, 17))
+    high_score_text = title_font.render(f'High Score: {int(high_score)}', True, (52, 235, 122))
     
-    title_rect = game_over_title.get_rect(center= (640, 100))
-    score_rect = score_text.get_rect(center= (640, 180))
+    title_rect = game_over_title.get_rect(center= (640, 80))
+    score_rect = score_text.get_rect(center= (640, 160))
+    high_score_rect = high_score_text.get_rect(center = (640, 240))
     
     sound_played = False
     
@@ -255,6 +262,7 @@ def game_over():
         screen.blit(bg, (0,0))
         screen.blit(game_over_title, title_rect)
         screen.blit(score_text, score_rect)
+        screen.blit(high_score_text, high_score_rect)
         
         if sound_played == False:
             pygame.mixer.Sound.play(retry_sound)
